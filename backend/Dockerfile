@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Install Playwright browser dependencies (Chromium only for lightweight footprint)
 RUN playwright install chromium
-RUN playwright install-deps
+RUN apt-get update && playwright install-deps chromium && rm -rf /var/lib/apt/lists/*
 
 COPY . .
 
