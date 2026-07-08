@@ -13,25 +13,73 @@ class VijaySalesMonitor(BaseMonitor):
             html = await self.fetch_html(url)
             soup = BeautifulSoup(html, "html.parser")
             
-            title_el = soup.find("h1") or soup.find(id="h1ProductName")
-            product_name = title_el.get_text(strip=True) if title_el else "Sony PlayStation 5 (Vijay Sales)"
-            
-            price_el = soup.find(class_="price") or soup.find(id="spanVSP")
-            price = None
-            if price_el:
-                price = self.parse_price(price_el.get_text(strip=True))
-                
-            # Check for Add to Cart / Buy Now buttons or "Temporarily Out of Stock" / "Notify Me"
-            add_button = soup.find(id="btnAddToCart") or soup.find(string=lambda t: t and "add to cart" in t.lower())
-            out_of_stock = (
-                soup.find(string=lambda t: t and "out of stock" in t.lower())
-                or soup.find(string=lambda t: t and "notify" in t.lower())
-                or soup.find(id="btnNotifyMe")
-            )
-            
+            # Check availability, price and product name via LD-JSON schema first
             is_available = False
-            if add_button and not out_of_stock:
-                is_available = True
+            price = None
+            schema_found = False
+            schema_product_name = None
+            ld_json_tags = soup.find_all("script", type="application/ld+json")
+            
+            for tag in ld_json_tags:
+                try:
+                    import json
+                    data = json.loads(tag.string)
+                    items = data if isinstance(data, list) else [data]
+                    for item in items:
+                        if isinstance(item, dict) and item.get("@type") == "Product":
+                            schema_product_name = item.get("name")
+                            offers = item.get("offers", {})
+                            if isinstance(offers, dict):
+                                availability = offers.get("availability", "")
+                                if availability:
+                                    schema_found = True
+                                    if "instock" in availability.lower():
+                                        is_available = True
+                                    else:
+                                        is_available = False
+                                        
+                                offer_price = offers.get("price") or offers.get("lowPrice")
+                                if offer_price:
+                                    price = float(offer_price)
+                                break
+                    if schema_found:
+                        break
+                except Exception:
+                    pass
+
+            title_el = soup.find("h1") or soup.find(id="h1ProductName")
+            product_name = schema_product_name or (title_el.get_text(strip=True) if title_el else None) or "Sony PlayStation 5 (Vijay Sales)"
+
+            # Fallback to robust DOM parsing if LD-JSON schema is not found
+            if not schema_found:
+                price_el = soup.find(class_="price") or soup.find(id="spanVSP")
+                if price_el:
+                    price = self.parse_price(price_el.get_text(strip=True))
+
+                visible_add_to_cart = False
+                for btn in soup.find_all("button"):
+                    btn_text = btn.get_text(strip=True).lower()
+                    if "add to cart" in btn_text or "buy now" in btn_text:
+                        # Check if this button or any of its ancestors has "d-none" or display: none style
+                        is_hidden = False
+                        curr = btn
+                        while curr:
+                            classes = curr.get("class", [])
+                            if "d-none" in classes:
+                                is_hidden = True
+                                break
+                            style = curr.get("style", "")
+                            if "display:none" in style.replace(" ", "").lower():
+                                is_hidden = True
+                                break
+                            curr = curr.parent
+                        if not is_hidden:
+                            visible_add_to_cart = True
+                            break
+                is_available = visible_add_to_cart
+                
+            if product_name:
+                product_name = product_name.replace("\ufffd", "®")
                 
             return {
                 "is_available": is_available,
