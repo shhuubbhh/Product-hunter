@@ -67,7 +67,7 @@ class BaseMonitor:
             await page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             
             # Navigate
-            await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            await page.goto(url, wait_until="domcontentloaded", timeout=15000)
             await asyncio.sleep(2)
             
             # Dismiss typical location popups if they exist

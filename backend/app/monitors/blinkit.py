@@ -31,10 +31,17 @@ class BlinkitMonitor(BaseMonitor):
             # Perform HTML fetching with location cookies using Playwright to bypass 403 Forbidden
             html = await self.fetch_html_playwright(url, cookies=cookies)
             soup = BeautifulSoup(html, "html.parser")
+
+            # Check for bot / captcha blocks or invalid product link
+            is_blocked = "cloudflare" in html.lower() or "captcha" in html.lower() or "robot check" in html.lower() or "access denied" in html.lower() or "checking your browser" in html.lower()
             
             # Simple parser for Blinkit web product page
             title_el = soup.find("h1") or soup.find(class_="ProductBuying__Title")
-            product_name = title_el.get_text(strip=True) if title_el else "Sony PlayStation 5 (Blinkit)"
+            
+            if not title_el or is_blocked:
+                raise Exception("Blocked by Blinkit anti-bot or invalid product URL (title missing)")
+                
+            product_name = title_el.get_text(strip=True)
             
             price_el = soup.find(class_="ProductBuying__Price") or soup.find(class_="price")
             price = None

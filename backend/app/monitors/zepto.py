@@ -33,8 +33,14 @@ class ZeptoMonitor(BaseMonitor):
             html = await self.fetch_html(url, cookies=cookies)
             soup = BeautifulSoup(html, "html.parser")
             
+            # Check for bot / captcha blocks or invalid product link
+            is_blocked = "cloudflare" in html.lower() or "captcha" in html.lower() or "robot check" in html.lower() or "access denied" in html.lower() or "checking your browser" in html.lower()
+            
             title_el = soup.find("h1") or soup.find(attrs={"data-testid": "product-name"})
-            product_name = title_el.get_text(strip=True) if title_el else "Sony PlayStation 5 (Zepto)"
+            if not title_el or is_blocked:
+                raise Exception("Blocked by Zepto anti-bot or invalid product URL (title missing)")
+                
+            product_name = title_el.get_text(strip=True)
             
             price_el = soup.find(attrs={"data-testid": "product-price"}) or soup.find(class_="price")
             price = None

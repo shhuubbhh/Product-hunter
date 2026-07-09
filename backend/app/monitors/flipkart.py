@@ -10,7 +10,7 @@ class FlipkartMonitor(BaseMonitor):
 
     async def check(self, url: str, custom_headers: str = None) -> dict:
         try:
-            html = await self.fetch_html(url)
+            html = await self.fetch_html_playwright(url)
             soup = BeautifulSoup(html, "html.parser")
             
             # Check for bot / captcha blocks
