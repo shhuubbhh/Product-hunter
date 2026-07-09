@@ -33,15 +33,15 @@ class BaseMonitor:
         from playwright.async_api import async_playwright
         from urllib.parse import urlparse
         async with async_playwright() as p:
-            browser = await p.firefox.launch(
+            browser = await p.chromium.launch(
                 headless=True
             )
             context_args = {
-                "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0",
+                "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 "viewport": {"width": 1280, "height": 800},
                 "extra_http_headers": {
                     "Accept-Language": "en-US,en;q=0.9",
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
                 }
             }
             if geolocation:

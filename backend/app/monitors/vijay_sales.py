@@ -47,8 +47,13 @@ class VijaySalesMonitor(BaseMonitor):
                 except Exception:
                     pass
 
+            is_blocked = "cloudflare" in html.lower() or "captcha" in html.lower() or "robot check" in html.lower() or "access denied" in html.lower() or "checking your browser" in html.lower()
+            
             title_el = soup.find("h1") or soup.find(id="h1ProductName")
-            product_name = schema_product_name or (title_el.get_text(strip=True) if title_el else None) or "Sony PlayStation 5 (Vijay Sales)"
+            if (not title_el and not schema_product_name) or is_blocked:
+                raise Exception("Blocked by Vijay Sales anti-bot / CAPTCHA detection")
+                
+            product_name = schema_product_name or title_el.get_text(strip=True)
 
             # Fallback to robust DOM parsing if LD-JSON schema is not found
             if not schema_found:

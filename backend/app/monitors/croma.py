@@ -47,8 +47,14 @@ class CromaMonitor(BaseMonitor):
             html = await self.fetch_html_playwright(url, cookies=cookies, geolocation=geolocation)
             soup = BeautifulSoup(html, "html.parser")
             
+            # Check for bot / captcha blocks
+            is_blocked = "cloudflare" in html.lower() or "captcha" in html.lower() or "robot check" in html.lower() or "access denied" in html.lower() or "checking your browser" in html.lower()
+            
             title_el = soup.find("h1") or soup.find(class_="pd-title")
-            product_name = title_el.get_text(strip=True) if title_el else "Sony PlayStation 5 (Croma)"
+            if not title_el or is_blocked:
+                raise Exception("Blocked by Croma anti-bot / CAPTCHA detection")
+                
+            product_name = title_el.get_text(strip=True)
             
             price_el = soup.find(id="pdp-info-price") or soup.find(class_="amount")
             price = None

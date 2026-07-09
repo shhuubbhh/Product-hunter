@@ -13,8 +13,14 @@ class RelianceDigitalMonitor(BaseMonitor):
             html = await self.fetch_html(url)
             soup = BeautifulSoup(html, "html.parser")
             
+            # Check for bot / captcha blocks
+            is_blocked = "cloudflare" in html.lower() or "captcha" in html.lower() or "robot check" in html.lower() or "access denied" in html.lower() or "checking your browser" in html.lower()
+            
             title_el = soup.find("h1") or soup.find(class_="pdp__title")
-            product_name = title_el.get_text(strip=True) if title_el else "Sony PlayStation 5 (Reliance Digital)"
+            if not title_el or is_blocked:
+                raise Exception("Blocked by Reliance Digital anti-bot / CAPTCHA detection")
+                
+            product_name = title_el.get_text(strip=True)
             
             price_el = soup.find(class_="pdp__priceSection__price") or soup.find(class_="price")
             price = None

@@ -10,12 +10,21 @@ class AmazonMonitor(BaseMonitor):
 
     async def check(self, url: str, custom_headers: str = None) -> dict:
         try:
-            html = await self.fetch_html(url)
+            html = await self.fetch_html_playwright(url)
             soup = BeautifulSoup(html, "html.parser")
+            
+            # Check for Amazon captcha page or block
+            is_captcha = False
+            if "captcha" in html.lower() or "/errors/validateCaptcha" in html or "robot check" in html.lower() or "field-keywords" in html:
+                is_captcha = True
             
             # Extract product title
             title_el = soup.find(id="productTitle")
-            product_name = title_el.get_text(strip=True) if title_el else "Sony PlayStation 5 (Amazon)"
+            
+            if not title_el or is_captcha:
+                raise Exception("Blocked by Amazon CAPTCHA / bot detection")
+                
+            product_name = title_el.get_text(strip=True)
             
             # Check availability
             avail_div = soup.find(id="availability")

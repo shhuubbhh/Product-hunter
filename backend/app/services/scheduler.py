@@ -41,6 +41,10 @@ class MonitoringScheduler:
                 )
                 session.add(sys_settings)
                 logger.info("Created default system settings.")
+            else:
+                if sys_settings.polling_interval == 20:
+                    sys_settings.polling_interval = 60
+                    logger.info("Updated default polling interval from 20s to 60s in database settings.")
 
             # Check store configs
             defaults = [

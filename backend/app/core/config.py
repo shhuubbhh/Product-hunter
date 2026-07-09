@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "supersecretkeychangeme"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     
-    DEFAULT_POLLING_INTERVAL: int = 20
+    DEFAULT_POLLING_INTERVAL: int = 60
     NOTIFICATION_COOLDOWN_MINUTES: int = 10
     
     # Notification Settings
